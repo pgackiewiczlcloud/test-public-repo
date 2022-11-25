@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: A simple resource with VPC reference
+
+Parameters:
+  Subnets:
+    Description: List of subnets to use in VPC.
+    Type: List<AWS::EC2::Subnet::Id>
+  VpcId:
+    Description: ID of the VPC.
+    Type: AWS::EC2::VPC::Id
+  SecurityGroups:
+    Description: List of security groups
+    Type: List<AWS::EC2::SecurityGroup::Id>
+
+Resources:
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: To allow ingress from EC2 instances in this group.
+      SecurityGroupEgress:
+        - Description: Allow all outbound
+          CidrIp: '0.0.0.0/0'
+          IpProtocol: '-1'
+      SecurityGroupIngress: []
+      VpcId: !Ref VpcId
+
+  SecurityGroup2:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Test2
+      SecurityGroupEgress:
+        - Description: Allow all outbound
+          CidrIp: '0.0.0.0/0'
+          IpProtocol: '-1'
+      SecurityGroupIngress:
+        - Description: Test
+          IpProtocol: tcp
+          FromPort: 27017
+          ToPort: 27017
+          SourceSecurityGroupId: !Select [ 0, !Ref SecurityGroups ]
+      VpcId: !Ref VpcId
+
+Outputs:
+  VpcId:
+    Value: !Ref VpcId
+  Subnets:
+    Value: !Join [ ",", !Ref Subnets ]
+  SecurityGroups:
+    Value: !Join [ ",", !Ref SecurityGroups]
