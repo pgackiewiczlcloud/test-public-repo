@@ -1,0 +1,187 @@
+CloudTowerManifestVersion: v0.2
+Author: LCloud
+License: MIT
+Metadata:
+  Author: foo
+  Description: This is my awsome CF stack
+ProductId: sample-custom-resource
+Version: "0.3"
+Framework:
+  Name: AWSCloudFormation
+  # Version: foo
+CloudCompatibility:
+  - AWS
+Properties:
+    AWSCloudFormation:
+        TemplateSource: custom-resource/custom-resource.yml
+        Capabilities:
+            - CAPABILITY_IAM
+Parameters:
+    AWSCloudFormation:
+        required:
+        - Parameters
+        RoleArn:
+            type: string
+            pattern: ^arn:aws:iam::\\d+:role/
+        DisableRollback:
+            type: boolean
+        Parameters:
+            type: object
+            required:
+            #     - Sleep
+                - VpcId
+                - Subnets
+                - SecurityGroups
+            additionalProperties: false
+            properties:
+                VpcId:
+                    type: string
+                    description: VPC Id
+                Subnets:
+                    type: string
+                SecurityGroups:
+                    type: string
+                # Sleep:
+                #     type: number
+                #     default: 20
+                #     description: Sleep for a few seconds
+                #     examples:
+                #         - 30
+                #         - 60
+                #     minimum: 10
+                #     maximum: 855
+        Tags:
+            type: array
+            items:
+                type: object
+                properties:
+                    name:
+                        type: string
+                    value:
+                        type: string
+
+    CustomCommands:
+        Env:
+            type: object
+            required:
+                - MYENV2
+            properties:
+                MYENV1:
+                    type: number
+                    default: 5
+                    description: my type param
+                    examples:
+                        - 1.2
+                        - 3
+                MYENV2:
+                    type: string
+
+CustomCommands:
+    VPCs:
+        existing-env:
+            AWS:
+                VpcConfig:
+                    VpcId:
+                        FromParameters:
+                            AWSCloudFormation:
+                                Parameters:
+                                    ParameterName: VpcId
+                    Subnets:
+                        Public:
+                            - FromParameters:
+                                AWSCloudFormation:
+                                    Parameters:
+                                        ParameterName: Subnets
+                                        Preprocess:
+                                            - split-comma-separated
+                    SecurityGroupIds:
+                        - FromParameters:
+                            AWSCloudFormation:
+                                Parameters:
+                                    ParameterName: SecurityGroups
+                                    Preprocess:
+                                        - split-comma-separated
+        new-env:
+            AWS:
+                VpcConfig:
+                    VpcId:
+                        FromOutputs:
+                            AWSCloudFormation:
+                                OutputName: VpcId
+                    Subnets:
+                        Private:
+                            - FromOutputs:
+                                AWSCloudFormation:
+                                    OutputName: Subnets
+                                    Preprocess:
+                                        - split-comma-separated
+                            - FromParameters:
+                                AWSCloudFormation:
+                                    Parameters:
+                                        RequiredValue: false
+                                        ParameterName: Subnets
+                                        Preprocess:
+                                            - split-comma-separated
+                            - FromArtifacts:
+                                FileName: subnets.txt
+                                Preprocess:
+                                    - split-comma-separated
+                    SecurityGroupIds:
+                        - FromOutputs:
+                            AWSCloudFormation:
+                                OutputName: SecurityGroups
+                                Preprocess:
+                                    - split-comma-separated
+                        - FromParameters:
+                            AWSCloudFormation:
+                                Parameters:
+                                    ParameterName: SecurityGroups
+                                    Preprocess:
+                                        - split-comma-separated
+    PreCreateInVpc:
+        - VpcName: existing-env
+          Commands:
+            - 'echo "PreUpdateInVpc: OK"'
+            - 'echo "AWS_SUBNET_IDS: $AWS_SUBNET_IDS"'
+            - 'echo "AWS_SECURITY_GROUP_IDS: $AWS_SECURITY_GROUP_IDS"'
+
+    PreCreate:
+        Commands:
+            - 'echo "PreCreate: OK, MYENV1: \\"$MYENV1\\", MYENV2: \"$MYENV2\""'
+
+    PostCreate:
+        Commands:
+            - 'echo "PostCreate: OK"'
+
+    PreUpdate:
+        Commands:
+            - 'echo "PreUpdate: OK, MYENV1: \\"$MYENV1\\", MYENV2: \"$MYENV2\""'
+
+    PostUpdate:
+        Commands:
+            - 'echo "PostUpdate: OK"'
+
+    PreDelete:
+        Commands:
+            - 'echo "PreDelete: OK, MYENV1: \\"$MYENV1\\", MYENV2: \"$MYENV2\""'
+
+    PostDelete:
+        Commands:
+            - 'echo "PostDelete: OK"'
+
+    PostCreateInVpc:
+        - VpcName: new-env
+          Commands:
+            - 'echo "PostUpdateInVpc: OK"'
+            - 'echo "AWS_SUBNET_IDS: $AWS_SUBNET_IDS"'
+            - 'echo "AWS_SECURITY_GROUP_IDS: $AWS_SECURITY_GROUP_IDS"'
+Outputs:
+    AWSCloudFormation:
+        VpcId:
+            description: Id of created VPC
+        Subnets:
+            description: A list of created priv subnets
+        SecurityGroups:
+            description: A list of created security groups
+        CustomResourceRole:
+            description: a role name
