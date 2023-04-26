@@ -5,7 +5,7 @@ Metadata:
   Author: foo
   Description: This is my awsome CF stack
 ProductId: sample-custom-resource
-Version: "0.4"
+Version: "0.5"
 Framework:
   Name: AWSCloudFormation
   # Version: foo
