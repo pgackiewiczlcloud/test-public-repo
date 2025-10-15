@@ -1,0 +1,10 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: A sample nested stack with S3 buckets
+
+Resources:
+  MainBucket:
+    Type: AWS::S3::Bucket
+
+Outputs:
+  MainBucketName:
+    Value: !Ref MainBucket
